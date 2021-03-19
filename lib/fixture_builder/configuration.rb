@@ -117,6 +117,10 @@ module FixtureBuilder
       @table_name_to_class_map ||= {}
     end
 
+    def files_hash
+      Digest::MD5.hexdigest(file_hashes.to_json)
+    end
+
     private
 
     def file_hashes
