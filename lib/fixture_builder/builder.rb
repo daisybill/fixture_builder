@@ -15,7 +15,6 @@ module FixtureBuilder
       create_fixture_objects
       names_from_ivars!
       write_data_to_files
-      after_build.call if after_build
     end
 
     protected

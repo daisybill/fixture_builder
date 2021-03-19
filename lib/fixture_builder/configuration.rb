@@ -20,6 +20,8 @@ module FixtureBuilder
                              :write_empty_files, :table_name_to_class_map]
     attr_accessor(*ACCESSIBLE_ATTRIBUTES)
 
+    attr_writer :set_from_cache
+
     SCHEMA_FILES = ['db/schema.rb', 'db/development_structure.sql', 'db/test_structure.sql', 'db/production_structure.sql']
 
     def initialize(opts={})
@@ -42,6 +44,7 @@ module FixtureBuilder
       return unless rebuild_fixtures?
       @builder = Builder.new(self, @namer, block).generate!
       write_config
+      after_build.call if after_build
     end
 
     def select_sql
@@ -146,16 +149,25 @@ module FixtureBuilder
       file_hashes_from_config= read_config
       if Dir.glob("#{fixture_directory}/*.yml").blank?
         puts "=> rebuilding fixtures because fixture directory #{fixture_directory} has no *.yml files"
-        return true
+        return set_from_cache
       elsif !::File.exist?(fixture_builder_file)
         puts "=> rebuilding fixtures because fixture_builder config file #{fixture_builder_file} does not exist"
-        return true
+        return set_from_cache
       elsif file_hashes_from_disk != file_hashes_from_config
         puts '=> rebuilding fixtures because one or more of the following files have changed (see http://www.rubydoc.info/gems/hashdiff for diff syntax):'
         Differ.diff(file_hashes_from_disk, file_hashes_from_config).map {|diff| print '   '; p diff}
-        return true
+        return set_from_cache
       end
       false
+    end
+
+    def set_from_cache
+      if @set_from_cache.is_a?(Proc)
+        # Must return true|false
+        @set_from_cache.()
+      else
+        true
+      end
     end
   end
 end
